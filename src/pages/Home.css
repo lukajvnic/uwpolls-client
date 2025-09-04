@@ -1,0 +1,6 @@
+.panels-container {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    margin: auto;
+    margin-top: 2rem;
+}
