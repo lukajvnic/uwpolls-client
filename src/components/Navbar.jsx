@@ -1,29 +1,44 @@
 import './Navbar.css';
+import Create from './Create';
+import React from 'react';
+
 
 function Navbar() {
-  return (
-    <nav>
-        <div className="brand">
-            <div className="logo-container">
-                <img id="logo" src="/uwpolls-logo.jpg" alt="Logo" />
+    const randomPoll = async () => {
+        console.log("Navigate to Random Poll");
+    }
+
+    const [creating, setCreating] = React.useState(false);
+
+    return (
+        <nav>
+            <div className="create-container">
+                {creating && <Create toggleCreate={() => {
+                    setCreating(false);
+                }} />}
             </div>
-            <div className="brand-name">
-                uwpolls
+
+            <div className="brand">
+                <div className="logo-container">
+                    <img id="logo" src="/uwpolls-logo.jpg" alt="Logo" />
+                </div>
+                <div className="brand-name">
+                    uwpolls
+                </div>
             </div>
-        </div>
-        <div className="nav-options">
-            <div className="nav-option">
-                Random
+            <div className="nav-options">
+                <div className="nav-option" onClick={randomPoll}>
+                    Random
+                </div>
+                <div id="create-poll" className="nav-option" onClick={() => setCreating(true)}>
+                    Create Poll
+                </div>
+                <div className="profile">
+                    <img id="profile-image" src="/profile.svg" alt="Profile" />
+                </div>
             </div>
-            <div id="create-poll" className="nav-option">
-                Create Poll
-            </div>
-            <div className="profile">
-                <img id="profile-image" src="/profile.svg" alt="Profile" />
-            </div>
-        </div>
-    </nav>
-  );
+        </nav>
+    );
 }
 
 export default Navbar;
