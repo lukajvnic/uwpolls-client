@@ -39,11 +39,11 @@ export function LoginDialog({ open, onOpenChange, onLoginSuccess }: LoginDialogP
       const res = await api.login({ email, password });
       toast.success("Logged in successfully!");
 
-      console.log("WE JUST LOGGED IN BABY", res);
+      // console.log("WE JUST LOGGED IN BABY", res);
       onLoginSuccess();
       onOpenChange(false);
     } catch (error) {
-      console.log("LOGIN ERROR", error);
+      // console.log("LOGIN ERROR", error);
       const errorMessage = error instanceof Error ? error.message : "Invalid email or password";
       toast.error(errorMessage);
     } finally {

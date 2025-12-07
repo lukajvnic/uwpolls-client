@@ -141,14 +141,16 @@ export function CreatePollDialog({ open, onOpenChange, onPollCreated }: CreatePo
             </button>
           )}
 
+          {/*
           <div className="flex items-center space-x-2">
             <Checkbox
               id="allowSeeResults"
               checked={allowSeeResults}
               onCheckedChange={(checked) => setAllowSeeResults(checked as boolean)}
             />
-            <Label htmlFor="allowSeeResults">Allow users to see results</Label>
+            <Label htmlFor="allowSeeResults">Allow users to peek results</Label>
           </div>
+          */}
 
           <Button type="submit" className="w-full cursor-pointer" disabled={isLoading}>
             {isLoading ? (

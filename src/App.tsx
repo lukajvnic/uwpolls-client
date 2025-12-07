@@ -12,13 +12,17 @@ import { api } from "./api";
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [filter, setFilter] = useState<"popular" | "recent">("popular");
+  const [filter, setFilter] = useState<"popular" | "recent" | "new" | "mypolls">("popular");
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const [createPollDialogOpen, setCreatePollDialogOpen] = useState(false);
   const [polls, setPolls] = useState<Poll[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const observerTarget = useRef<HTMLDivElement>(null);
+  const filterContainerRef = useRef<HTMLDivElement>(null);
+  const [bubbleStyle, setBubbleStyle] = useState({ left: 0, width: 0 });
 
   // Helper function to transform backend poll data to frontend format
   const transformPollData = (backendPoll: any): Poll => {
@@ -51,10 +55,12 @@ export default function App() {
   const fetchPopularPolls = async () => {
     try {
       setIsLoading(true);
-      const data = await api.fetchPolls({ filter: 'popular' });
-      console.log(data);
+      const data = await api.fetchPolls({ filter: 'popular', page: 1 });
+      // console.log(data);
       const transformedPolls = (data.polls || []).map(transformPollData);
       setPolls(transformedPolls);
+      setCurrentPage(1);
+      setHasMore(data.has_more || false);
     } catch (error) {
       console.error("Failed to fetch popular polls:", error);
     } finally {
@@ -65,9 +71,11 @@ export default function App() {
   const fetchRecentPolls = async () => {
     try {
       setIsLoading(true);
-      const data = await api.fetchPolls({ filter: 'recent' });
+      const data = await api.fetchPolls({ filter: 'recent', page: 1 });
       const transformedPolls = (data.polls || []).map(transformPollData);
       setPolls(transformedPolls);
+      setCurrentPage(1);
+      setHasMore(data.has_more || false);
     } catch (error) {
       console.error("Failed to fetch recent polls:", error);
     } finally {
@@ -75,21 +83,52 @@ export default function App() {
     }
   };
 
-  // TODO: Implement backend call to fetch more polls for infinite scroll
+  const fetchNewPolls = async () => {
+    try {
+      setIsLoading(true);
+      const data = await api.fetchPolls({ filter: 'new', page: 1 });
+      const transformedPolls = (data.polls || []).map(transformPollData);
+      setPolls(transformedPolls);
+      setCurrentPage(1);
+      setHasMore(data.has_more || false);
+    } catch (error) {
+      console.error("Failed to fetch new polls:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchMyPolls = async () => {
+    try {
+      setIsLoading(true);
+      const data = await api.fetchPolls({ filter: 'mypolls', page: 1 });
+      const transformedPolls = (data.polls || []).map(transformPollData);
+      setPolls(transformedPolls);
+      setCurrentPage(1);
+      setHasMore(data.has_more || false);
+    } catch (error) {
+      console.error("Failed to fetch my polls:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const fetchMorePolls = async () => {
-    if (isLoadingMore) return;
+    if (isLoading || isLoadingMore || !hasMore) return;
 
     setIsLoadingMore(true);
-    console.log("Fetching more polls...");
-
-    // After backend integration:
-    // const newPolls = await api.fetchPolls({ 
-    //   filter, 
-    //   offset: polls.length 
-    // });
-    // setPolls([...polls, ...newPolls]);
-
-    setIsLoadingMore(false);
+    try {
+      const nextPage = currentPage + 1;
+      const data = await api.fetchPolls({ filter, page: nextPage });
+      const transformedPolls = (data.polls || []).map(transformPollData);
+      setPolls(prevPolls => [...prevPolls, ...transformedPolls]);
+      setCurrentPage(nextPage);
+      setHasMore(data.has_more || false);
+    } catch (error) {
+      console.error("Failed to fetch more polls:", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
   };
 
   const submitVote = async (pollId: string, optionId: string) => {
@@ -136,14 +175,37 @@ export default function App() {
   };
 
   // Handle filter changes
-  const handleFilterChange = (newFilter: "popular" | "recent") => {
+  const handleFilterChange = (newFilter: "popular" | "recent" | "new" | "mypolls") => {
     setFilter(newFilter);
     if (newFilter === "popular") {
       fetchPopularPolls();
-    } else {
+    } else if (newFilter === "recent") {
       fetchRecentPolls();
+    } else if (newFilter === "new") {
+      fetchNewPolls();
+    } else if (newFilter === "mypolls") {
+      fetchMyPolls();
     }
   };
+
+  // Update bubble position when filter or login state changes
+  useEffect(() => {
+    const container = filterContainerRef.current;
+    if (!container) return;
+    const buttons = container.querySelectorAll('button');
+    // Filter index depends on whether logged-in buttons are visible
+    const visibleFilters = isLoggedIn
+      ? ["popular", "recent", "new", "mypolls"]
+      : ["popular", "recent"];
+    const filterIndex = visibleFilters.indexOf(filter);
+    const button = buttons[filterIndex] as HTMLElement;
+    if (button) {
+      setBubbleStyle({
+        left: button.offsetLeft,
+        width: button.offsetWidth,
+      });
+    }
+  }, [filter, isLoggedIn]);
 
   // Fetch initial polls on mount
   useEffect(() => {
@@ -177,8 +239,11 @@ export default function App() {
     try {
       await api.logout();
       setIsLoggedIn(false);
-      // Refetch polls to update userHasVoted status (should be false for logged-out users)
-      if (filter === 'popular') {
+      // Reset filter to 'popular' if on a logged-in-only filter
+      if (filter === 'new' || filter === 'mypolls') {
+        setFilter('popular');
+        await fetchPopularPolls();
+      } else if (filter === 'popular') {
         await fetchPopularPolls();
       } else {
         await fetchRecentPolls();
@@ -202,8 +267,12 @@ export default function App() {
     // Refetch polls to update userHasVoted and userVotedOption for logged-in user
     if (filter === 'popular') {
       await fetchPopularPolls();
-    } else {
+    } else if (filter === 'recent') {
       await fetchRecentPolls();
+    } else if (filter === 'new') {
+      await fetchNewPolls();
+    } else if (filter === 'mypolls') {
+      await fetchMyPolls();
     }
   };
 
@@ -215,8 +284,12 @@ export default function App() {
     // Refetch polls based on current filter
     if (filter === "popular") {
       fetchPopularPolls();
-    } else {
+    } else if (filter === "recent") {
       fetchRecentPolls();
+    } else if (filter === "new") {
+      fetchNewPolls();
+    } else if (filter === "mypolls") {
+      fetchMyPolls();
     }
   };
 
@@ -255,11 +328,11 @@ export default function App() {
 
         {/* Filter Toggle */}
         <div className="flex justify-center mb-6">
-          <div className="inline-flex items-center p-0.5 rounded-full border border-border bg-background relative shadow-lg">
+          <div ref={filterContainerRef} className="inline-flex items-center p-0.5 rounded-full border border-border bg-background shadow-lg relative">
             {/* Sliding background */}
             <div
-              className={`absolute top-0.5 bottom-0.5 left-0.5 right-0.5 w-[calc(50%-4px)] bg-gray-100 rounded-full transition-transform duration-300 ease-out ${filter === "recent" ? "translate-x-[calc(100%+4px)]" : "translate-x-0"
-                }`}
+              className="absolute top-0.5 bottom-0.5 bg-gray-100 rounded-full transition-all duration-300 ease-out"
+              style={{ left: bubbleStyle.left, width: bubbleStyle.width }}
             />
             <button
               onClick={() => handleFilterChange("popular")}
@@ -279,6 +352,28 @@ export default function App() {
             >
               Recent
             </button>
+            {isLoggedIn && (
+              <button
+                onClick={() => handleFilterChange("new")}
+                className={`px-6 py-1.5 rounded-full transition-colors cursor-pointer relative z-10 ${filter === "new"
+                  ? "text-foreground"
+                  : "text-foreground/60 hover:text-foreground/80"
+                  }`}
+              >
+                New
+              </button>
+            )}
+            {isLoggedIn && (
+              <button
+                onClick={() => handleFilterChange("mypolls")}
+                className={`px-6 py-1.5 rounded-full transition-colors cursor-pointer relative z-10 ${filter === "mypolls"
+                  ? "text-foreground"
+                  : "text-foreground/60 hover:text-foreground/80"
+                  }`}
+              >
+                My Polls
+              </button>
+            )}
           </div>
         </div>
 
@@ -287,6 +382,12 @@ export default function App() {
           {isLoading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="w-8 h-8 text-primary" style={{ animation: "spin 1s linear infinite" }} />
+            </div>
+          ) : polls.length === 0 ? (
+            <div className="flex items-center justify-center py-20">
+              <p className="text-muted-foreground text-center">
+                No polls found with the selected filter. Try a different one!
+              </p>
             </div>
           ) : (
             polls.map((poll) => (
@@ -307,9 +408,9 @@ export default function App() {
         </div>
 
         {/* Infinite Scroll Loader */}
-        {isLoadingMore && (
-          <div className="text-center mt-6">
-            <p>Loading more polls...</p>
+        {!isLoading && isLoadingMore && (
+          <div className="flex items-center justify-center mt-6 py-6">
+            <Loader2 className="w-8 h-8 text-primary" style={{ animation: "spin 1s linear infinite" }} />
           </div>
         )}
         <div ref={observerTarget} className="h-10" />

@@ -17,7 +17,8 @@ interface VotePayload {
 }
 
 interface PollsQuery {
-  filter: "popular" | "recent";
+  filter: "popular" | "recent" | "new" | "mypolls";
+  page?: number;
   offset?: number;
   limit?: number;
 }
@@ -37,7 +38,7 @@ export const api = {
     });
     if (!response.ok) throw new Error("Test failed");
     const data = await response.json();
-    console.log("Test response:", data);
+    // console.log("Test response:", data);
     return data;
   },
 
@@ -53,7 +54,7 @@ export const api = {
       throw new Error(error.error || "Login failed");
     }
     const data = await response.json();
-    console.log("login response:", data);
+    // console.log("login response:", data);
     return data;
   },
 
@@ -69,13 +70,19 @@ export const api = {
       throw new Error(error.errors?.[0] || error.error || "Sign up failed");
     }
     const data = await response.json();
-    console.log("signup response:", data);
+    // console.log("signup response:", data);
     return data;
   },
 
   async fetchPolls(query: PollsQuery) {
-    const endpoint = query.filter === 'popular' ? '/poll/popular' : '/poll/recent';
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    let endpoint = '/poll/popular';
+    if (query.filter === 'recent') endpoint = '/poll/recent';
+    else if (query.filter === 'new') endpoint = '/poll/new';
+    else if (query.filter === 'mypolls') endpoint = '/poll/mypolls';
+    else if (query.filter === 'popular') endpoint = '/poll/popular';
+
+    const pageParam = query.page ? `?page=${query.page}` : '';
+    const response = await fetch(`${API_BASE_URL}${endpoint}${pageParam}`, {
       credentials: "include",
     });
     if (!response.ok) throw new Error("Failed to fetch polls");
