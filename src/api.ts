@@ -45,7 +45,10 @@ export const api = {
   async login(payload: LoginPayload) {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
+      },
       body: JSON.stringify(payload),
       credentials: "include",
     });
@@ -61,7 +64,10 @@ export const api = {
   async signUp(payload: SignUpPayload) {
     const response = await fetch(`${API_BASE_URL}/auth/signup`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
+      },
       body: JSON.stringify(payload),
       credentials: "include",
     });
@@ -84,6 +90,9 @@ export const api = {
     const pageParam = query.page ? `?page=${query.page}` : '';
     const response = await fetch(`${API_BASE_URL}${endpoint}${pageParam}`, {
       credentials: "include",
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+      },
     });
     if (!response.ok) throw new Error("Failed to fetch polls");
     return response.json();
@@ -92,7 +101,10 @@ export const api = {
   async submitVote(pollId: string, optionNumber: number) {
     const response = await fetch(`${API_BASE_URL}/poll/votepoll`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
+      },
       body: JSON.stringify({ pollId, optionNumber }),
       credentials: "include",
     });
@@ -103,7 +115,10 @@ export const api = {
   async createPoll(payload: { title: string; opt1: string; opt2: string; opt3: string | null; opt4: string | null }) {
     const response = await fetch(`${API_BASE_URL}/poll/createpoll`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
+      },
       body: JSON.stringify(payload),
       credentials: "include",
     });
@@ -117,6 +132,9 @@ export const api = {
   async peekPoll(pollId: string) {
     const response = await fetch(`${API_BASE_URL}/poll/${pollId}/peek`, {
       credentials: "include",
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+      },
     });
     if (!response.ok) throw new Error("Failed to peek poll");
     return response.json();
@@ -126,6 +144,9 @@ export const api = {
     const response = await fetch(`${API_BASE_URL}/auth/logout`, {
       method: "POST",
       credentials: "include",
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+      },
     });
     if (!response.ok) {
       throw new Error("Logout failed");
