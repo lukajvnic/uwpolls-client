@@ -56,5 +56,9 @@ export default defineConfig({
   server: {
     port: 5431,
     open: true,
+    host: true,
+    hmr: {
+      clientPort: 443,
+    },
   },
 });
